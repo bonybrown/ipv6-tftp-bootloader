@@ -123,7 +123,7 @@ int build_solicitation_response( int packet_size, uint8_t *packet ,  uint8_t *my
   return (src_mac + ETH_ALEN) - packet; //length of packet to send
 }
 
-uint16_t icmpv6_pseduo_header_checksum( uint8_t *src_addr, uint8_t *dest_addr, uint32_t upper_layer_packet_length, uint8_t next_header_value ){
+uint16_t icmpv6_pseduo_header_checksum( void *src_addr, void *dest_addr, uint32_t upper_layer_packet_length, uint8_t next_header_value ){
   uint16_t checksum = 0;
   uint32_t network ;
   checksum_summate(&checksum, src_addr, IPV6_ADDR_LENGTH);

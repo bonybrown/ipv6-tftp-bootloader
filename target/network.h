@@ -1,7 +1,8 @@
 /* maximum size of an ethernet frame, including crc and vlan tag */
-#include <linux/if_ether.h>
-#include <stdint.h>
 
+#include <stdint.h>
+#define ETH_ALEN        6               /* Octets in one ethernet addr   */
+#define ETH_HLEN        14              /* Total octets in header.       */
 #define MAX_ETHERNET_PACKET_SIZE	1522
 
 #define IPV6_ADDR_LENGTH	16  
@@ -91,6 +92,6 @@ void checksum_set( uint8_t checksum_buffer[2], uint16_t checksum );
 /* Calculate the icmpv6 pseudo header for the src, dest, packet length and next header
  * Returns the host-order checksum for passing into checksum_summate
  */
-uint16_t icmpv6_pseduo_header_checksum( uint8_t *src_addr, uint8_t *dest_addr, uint32_t upper_layer_packet_length, uint8_t next_header_value );
+uint16_t icmpv6_pseduo_header_checksum( void *src_addr, void *dest_addr, uint32_t upper_layer_packet_length, uint8_t next_header_value );
 
 uint32_t htonl(  uint32_t host_value );

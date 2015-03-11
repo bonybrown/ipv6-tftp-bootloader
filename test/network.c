@@ -1,5 +1,5 @@
 #include <np.h>     /* NovaProva library */
-#include "../network.h" /* declares the Code Under Test */
+#include "../target/network.h" /* declares the Code Under Test */
 
 static void test_checksum_summate_zero(void)
 {

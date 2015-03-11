@@ -9,7 +9,7 @@ MAIN_SOURCE=  k12_read.c
 
 MAIN_OBJS=	  $(MAIN_SOURCE:.c=.o)
 
-CODE_SOURCE=  network.c
+CODE_SOURCE=  target/network.c
 
 CODE_OBJS=    $(CODE_SOURCE:.c=.o)
 

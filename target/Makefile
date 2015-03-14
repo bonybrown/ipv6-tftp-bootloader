@@ -3,7 +3,7 @@
 #
 
 TARGET	= boot
-PROJECT_SOURCE=  main.c network.c
+PROJECT_SOURCE=  main.c serial.c network.c i2c.c mc24aa00.c enc28j60.c timer.c
 
 CPU := 33FJ128GP204
 
@@ -55,6 +55,10 @@ CUSTOM_RULE_LINK=1
 
 PROJECT_OBJECTFILES=	  $(PROJECT_SOURCE:.c=.o)
 
+all:	ccvercheck $(PROJECT_OBJECTFILES)
+	$(LD) $(LDFLAGS) $(PROJECT_OBJECTFILES) -o $(TARGET) 
+	$(BIN2HEX) $(TARGET) -omf=elf
+
 ccvercheck:
 	$(info xc16-gcc version is '$(MPLAB_VER)' recommend 4.5.1)
 
@@ -71,9 +75,13 @@ ccvercheck:
 #	@
 
 clean:	
-	$(RM) $(TARGET).map $(TARGET).hex $(TARGET) $(PROJECT_OBJECTFILES)
+	$(RM) $(TARGET).map $(TARGET).bin $(TARGET).hex $(TARGET) $(PROJECT_OBJECTFILES)
 
-all:	ccvercheck $(PROJECT_OBJECTFILES)
-	$(LD) $(LDFLAGS) $(PROJECT_OBJECTFILES) -o $(TARGET) 
-	$(BIN2HEX) $(TARGET) -omf=elf
+OUT=$(shell readlink -f *.hex)
+
+prog:
+	pk2cmd -r -p -m -f$(OUT)
+
+bin:
+	srec_cat $(OUT) -Intel -Exclude 0x01F00000 0x02000000 -Output $(TARGET).bin -Binary
 	

@@ -27,6 +27,14 @@ inline uint16_t htons(  uint16_t host_value){
 #endif
 }
 
+inline uint16_t ntohs(  uint16_t network_value){
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+  uint16_t result = ((network_value >> 8) & 0xff) | ( network_value << 8);
+  return result; 
+#else
+  return network_value;
+#endif
+}
 
 void checksum_summate ( uint16_t *checksum, void * addr, int count) {
   /* Compute Internet Checksum for "count" bytes
@@ -74,6 +82,9 @@ enum packet_type get_packet_type(  uint8_t *packet ){
     if( icmp->type == ICMPV6_TYPE_NS ){
       return packet_type_neighbour_solicitation;
     }
+    if( icmp->type == ICMPV6_TYPE_PING_REQUEST ){
+      return packet_type_ping_request;
+    }
   }
   /* TODO:handle tftp case 
   if( ip->next_header == IPPROTO_UDP )
@@ -113,14 +124,33 @@ int build_solicitation_response( int packet_size, uint8_t *packet ,  uint8_t *my
   ns->flags[2] = 0x00;
   ns->flags[3] = 0x00;
   memcpy( src_mac, my_mac_address, ETH_ALEN );
-
-  checksum = icmpv6_pseduo_header_checksum( &ip->src_addr, &ip->dest_addr, 32, 58 );
+  ns->option.type = ICMP_OPTION_TYPE_TARGET_LINK_LAYER_ADDRESS;
+  
+  checksum = icmpv6_pseduo_header_checksum( &ip->src_addr, &ip->dest_addr, ntohs(ip->payload_length), 58 );
 
   checksum_set( ns-> checksum, 0 );
-  checksum_summate(&checksum, ns, 32);
+  checksum_summate(&checksum, ns, ntohs(ip->payload_length));
   checksum_set( ns-> checksum, htons(~checksum) );
   
   return (src_mac + ETH_ALEN) - packet; //length of packet to send
+}
+
+int build_ping_response( int packet_size, uint8_t *packet ,  uint8_t *my_mac_address, uint8_t *my_eui_64 ){
+  uint16_t checksum = 0;
+  memcpy( packet, packet+ETH_ALEN, ETH_ALEN );
+  memcpy( packet + ETH_ALEN, my_mac_address, ETH_ALEN );
+  struct ipv6_packet *ip = AS_IP(packet) ;
+  memcpy( ip->dest_addr, ip->src_addr, IPV6_ADDR_LENGTH);
+  memcpy( ip->src_addr, link_local, 8 );
+  memcpy( ip->src_addr+8, my_eui_64, 8);
+  struct icmpv6_ping_packet *ping = AS_ICMP_PING(packet);
+  ping->type = ICMPV6_TYPE_PING_RESPONSE;
+  
+  checksum = icmpv6_pseduo_header_checksum( &ip->src_addr, &ip->dest_addr, ntohs(ip->payload_length), 58 );
+  checksum_set( ping-> checksum, 0 );
+  checksum_summate(&checksum, ping, ntohs(ip->payload_length));
+  checksum_set( ping-> checksum, htons(~checksum) );
+  return ntohs(ip->payload_length) + ICMP_PACKET_OFFSET;
 }
 
 uint16_t icmpv6_pseduo_header_checksum( void *src_addr, void *dest_addr, uint32_t upper_layer_packet_length, uint8_t next_header_value ){

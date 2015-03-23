@@ -9,7 +9,7 @@ MAIN_SOURCE=  k12_read.c
 
 MAIN_OBJS=	  $(MAIN_SOURCE:.c=.o)
 
-CODE_SOURCE=  target/network.c
+CODE_SOURCE=  target/network.c target/packet.c target/net.c
 
 CODE_OBJS=    $(CODE_SOURCE:.c=.o)
 
@@ -20,7 +20,7 @@ test: testrunner
 	./testrunner
         
 
-TEST_SOURCE= test/network.c
+TEST_SOURCE= test/network.c test/packet.c test/net.c
 TEST_OBJS=  $(TEST_SOURCE:.c=.o)
 
 testrunner:  $(TEST_OBJS) $(CODE_OBJS)

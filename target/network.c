@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 const uint8_t ethernet_mac_broadcast[ETH_ALEN] = {0xff,0xff,0xff,0xff,0xff,0xff};
-
+/*
 inline uint32_t htonl(  uint32_t host_value){
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   uint32_t result = 0;
@@ -35,30 +35,31 @@ inline uint16_t ntohs(  uint16_t network_value){
   return network_value;
 #endif
 }
+*/
 
-void checksum_summate ( uint16_t *checksum, void * addr, int count) {
-  /* Compute Internet Checksum for "count" bytes
-  *         beginning at location "addr".
-  */
-  uint32_t sum = *checksum;
-	uint16_t *addr16 = (uint16_t*)addr;
-  while( count > 1 )  {
-      /*  This is the inner loop */
-	  sum += *addr16;
-	  addr16++;
-	  count -= 2;
-  }
-
-      /*  Add left-over byte, if any */
-  if( count > 0 )
-	  sum += * (uint8_t *) addr16;
-
-      /*  Fold 32-bit sum to 16 bits */
-  while (sum>>16){
-      sum = (sum & 0xffff) + (sum >> 16);
-	}
-  *checksum = sum;
-}
+// void checksum_summate ( uint16_t *checksum, void * addr, int count) {
+//   /* Compute Internet Checksum for "count" bytes
+//   *         beginning at location "addr".
+//   */
+//   uint32_t sum = *checksum;
+// 	uint16_t *addr16 = (uint16_t*)addr;
+//   while( count > 1 )  {
+//       /*  This is the inner loop */
+// 	  sum += *addr16;
+// 	  addr16++;
+// 	  count -= 2;
+//   }
+// 
+//       /*  Add left-over byte, if any */
+//   if( count > 0 )
+// 	  sum += * (uint8_t *) addr16;
+// 
+//       /*  Fold 32-bit sum to 16 bits */
+//   while (sum>>16){
+//       sum = (sum & 0xffff) + (sum >> 16);
+// 	}
+//   *checksum = sum;
+// }
 
 
 enum eth_dest_type ethernet_identify_destination( int packet_size, uint8_t *packet, uint8_t *my_mac_address, uint8_t *my_eui_64 ){

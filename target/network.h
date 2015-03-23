@@ -113,3 +113,4 @@ void checksum_set( uint8_t checksum_buffer[2], uint16_t checksum );
 uint16_t icmpv6_pseduo_header_checksum( void *src_addr, void *dest_addr, uint32_t upper_layer_packet_length, uint8_t next_header_value );
 
 uint32_t htonl(  uint32_t host_value );
+uint16_t htons(  uint16_t host_value);

@@ -146,3 +146,14 @@ void checksum_summate ( uint16_t *checksum, void * addr, int count) {
   *checksum = sum;
 }
 
+uint16_t ipv6_pseduo_header_checksum( void *src_addr, void *dest_addr, uint32_t upper_layer_packet_length, uint8_t next_header_value ){
+  uint16_t checksum = 0;
+  uint32_t network_long ;
+  checksum_summate(&checksum, src_addr, IPV6_ADDR_LENGTH);
+  checksum_summate(&checksum, dest_addr, IPV6_ADDR_LENGTH);
+  network_long = htonl( upper_layer_packet_length );
+  checksum_summate(&checksum, &network_long, 4);
+  network_long = htonl( next_header_value );
+  checksum_summate(&checksum, &network_long, 4);
+  return checksum;
+}

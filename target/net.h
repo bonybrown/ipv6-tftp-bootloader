@@ -75,7 +75,7 @@ struct eth_packet{
   uint8_t ip_payload[ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH - IPV6_HEADER_LENGTH];
 } __attribute__((__packed__));
 
-#define IPV6_PAYLOAD_MAX_LENGTH 	(sizeof( ((eth_packet*)0)->ip_payload ) )
+#define IPV6_PAYLOAD_MAX_LENGTH 	(ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH - IPV6_HEADER_LENGTH )
 #define IP_PAYLOAD_FROM_IP(ip_ptr)	((uint8_t *) (ip_ptr + IPV6_HEADER_LENGTH ))
 
 
@@ -142,5 +142,8 @@ uint16_t htons( uint16_t host_value );
 uint16_t ntohs( uint16_t network_value );
 
 const uint8_t * eth_config_get_address();
+
+uint16_t ipv6_pseduo_header_checksum( void *src_addr, void *dest_addr, uint32_t upper_layer_packet_length, uint8_t next_header_value );
+
 
 #endif

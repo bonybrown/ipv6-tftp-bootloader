@@ -1,23 +1,10 @@
 #include "icmpv6.h"
 #include <string.h>
 
-static uint16_t icmpv6_pseduo_header_checksum( void *src_addr, void *dest_addr, uint32_t upper_layer_packet_length, uint8_t next_header_value );
 static void icmp_response(struct ip_packet *pkt, struct icmpv6_header *icmp, uint8_t icmp_type, uint16_t payload_length );
 static int icmp_ping( struct ip_packet *pkt );
 static int icmp_neighbour_solicitation( struct ip_packet *pkt );
 
-
-uint16_t icmpv6_pseduo_header_checksum( void *src_addr, void *dest_addr, uint32_t upper_layer_packet_length, uint8_t next_header_value ){
-  uint16_t checksum = 0;
-  uint32_t network_long ;
-  checksum_summate(&checksum, src_addr, IPV6_ADDR_LENGTH);
-  checksum_summate(&checksum, dest_addr, IPV6_ADDR_LENGTH);
-  network_long = htonl( upper_layer_packet_length );
-  checksum_summate(&checksum, &network_long, 4);
-  network_long = htonl( next_header_value );
-  checksum_summate(&checksum, &network_long, 4);
-  return checksum;
-}
 
 void icmp_response(struct ip_packet *pkt, struct icmpv6_header *icmp, uint8_t icmp_type, uint16_t payload_length ){
   uint16_t checksum = 0;
@@ -26,7 +13,7 @@ void icmp_response(struct ip_packet *pkt, struct icmpv6_header *icmp, uint8_t ic
   
   ipv6_prepare( &pkt->header, pkt->header.src_addr, IPV6_NEXT_HEADER_ICMPV6, payload_length );
 
-  checksum = icmpv6_pseduo_header_checksum( pkt->header.src_addr, pkt->header.dest_addr, payload_length, IPV6_NEXT_HEADER_ICMPV6 );
+  checksum = ipv6_pseduo_header_checksum( pkt->header.src_addr, pkt->header.dest_addr, payload_length, IPV6_NEXT_HEADER_ICMPV6 );
   checksum_summate(&checksum, icmp, payload_length);
   icmp->checksum = (~checksum); //htons NOT required here?
 }

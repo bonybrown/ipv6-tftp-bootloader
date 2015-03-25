@@ -44,6 +44,17 @@ static void test_eth_address(void)
     NP_ASSERT_EQUAL(0, memcmp( header.dest_addr, multicast, ETH_ADDR_LENGTH ));
 }
 
+static void test_eth_config_get_address(void)
+{
+    struct eth_header header;    
+    eth_config_set_address( my_addr );
+    
+    uint8_t *config_address = eth_config_get_address();
+    
+    NP_ASSERT(config_address != NULL );
+    NP_ASSERT_EQUAL(0, memcmp( config_address, my_addr, ETH_ADDR_LENGTH ));
+}
+
 static void test_ipv6_is_for_this_address()
 {
   struct ipv6_header header;
@@ -86,21 +97,16 @@ static void test_ipv6_physical_map()
   
 }
 
-static void test_ipv6_send()
+static void test_ipv6_prepare()
 {
   uint8_t other_ip_addr[IPV6_ADDR_LENGTH]   = { OTHER_IP };
-  uint8_t other_phy[ETH_ADDR_LENGTH]   = {0xde,0xad,0xbe,0xef,0xca,0xfe};
-  eth_config_set_address( my_addr );
   ipv6_config_set_address( my_ip_addr );
-  ipv6_physical_add_entry( other_ip_addr, other_phy );
-  struct eth_packet packet;
-  memset( &packet, 0xff, sizeof( packet ) );
-  int result = ipv6_send( &packet, other_ip_addr, IPV6_NEXT_HEADER_UDP, 0x1fe);
-  NP_ASSERT_EQUAL( 1, result );
-  const uint8_t expected[IPV6_HEADER_LENGTH+ETH_HEADER_LENGTH] = {
-    0xde,0xad,0xbe,0xef,0xca,0xfe, //dest phy
-    0xe0,0xde,0xf1,0x78,0x6a,0xc6,  //src phy
-    0x86, 0xdd, //type
+
+  struct ipv6_header header;
+  memset( &header, 0xff, sizeof( header ) );
+  ipv6_prepare( &header, other_ip_addr, IPV6_NEXT_HEADER_UDP, 0x1fe);
+  
+  const uint8_t expected[IPV6_HEADER_LENGTH] = {
     0x60, 0x00, 0x00, 0x00, //version/flow-control
     0x01, 0xfe, //payload_length
     IPV6_NEXT_HEADER_UDP, //next header
@@ -108,7 +114,7 @@ static void test_ipv6_send()
     MY_IP , //src ip
     OTHER_IP //dest ip
   };
-  NP_ASSERT_EQUAL(0, memcmp( expected, &packet, sizeof( expected )) );
+  NP_ASSERT_EQUAL(0, memcmp( expected, &header, sizeof( expected )) );
     
 }
   

@@ -39,7 +39,6 @@ int eth_is_ipv6(struct eth_header *header );
 void eth_address(struct eth_header *header, uint8_t dest_addr[ETH_ADDR_LENGTH], uint16_t type );
 
 
-
 /*
  * 
  * IP V6 definitions
@@ -81,7 +80,7 @@ struct eth_packet{
 
 
 struct ip_packet{
-  struct ipv6_header ip;
+  struct ipv6_header header;
   uint8_t ip_payload[ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH - IPV6_HEADER_LENGTH];
 } __attribute__((__packed__));
 
@@ -97,12 +96,9 @@ int ipv6_is_for_this_address(struct ipv6_header *header );
 uint16_t ipv6_payload_length(struct ipv6_header *header );
 
 /*
- * Send the ip packet pointed to by packet to ip_addr
- * Lookup physical address of destination from the ip_addr
- * Returns 1 on success, 0 on failure
- * Will not attempt neighbour soliciation to resolve ip_addr to eth_addr 
+ * Prepare the ipv6 packet to be sent 
  */
-int ipv6_send( struct eth_packet *packet, uint8_t ip_addr[IPV6_ADDR_LENGTH], uint8_t next_header,  uint16_t payload_length );
+void ipv6_prepare( struct ipv6_header *header, uint8_t ip_addr[IPV6_ADDR_LENGTH], uint8_t next_header,  uint16_t payload_length );
 
 
 /*
@@ -116,7 +112,7 @@ uint8_t * ipv6_physical_address_of( uint8_t dest_ip_addr[IPV6_ADDR_LENGTH] );
  * eth = packet
  * int response_length = 0;
  * ip_packet *pkt = IP_PACKET_FROM_ETH( eth )
- * switch( pkt.ip -> next_header ){
+ * switch( pkt->header.next_header ){
  *  case IPV6_NEXT_HEADER_ICMPV6:
  *    response_length = icmpv6_dispatch( pkt );
  *    break;
@@ -125,8 +121,12 @@ uint8_t * ipv6_physical_address_of( uint8_t dest_ip_addr[IPV6_ADDR_LENGTH] );
  *    break;
  * }
  * if( response_length > 0 ){
- *   //send a packet of the same type to the src address
- *   ipv6_send( eth_packet, pkt->ip.src_addr, pkt->ip.next_header, response_length );
+ *   //send a packet
+ *   uint8_t *dest_ll = ipv6_physical_address_of( pkt->ip.dest_addr );
+ *   if( dest_ll != NULL ){
+ *    eth_address( eth_packet, dest_ll, ETH_TYPE_IPV6 );
+ *    mac_send( eth_packet, response_length + HEADER_LENGTHS );
+ *   }
  * }
 */
 
@@ -140,5 +140,7 @@ void checksum_summate ( uint16_t *checksum, void * addr, int count);
 uint32_t htonl( uint32_t host_value );
 uint16_t htons( uint16_t host_value );
 uint16_t ntohs( uint16_t network_value );
+
+const uint8_t * eth_config_get_address();
 
 #endif

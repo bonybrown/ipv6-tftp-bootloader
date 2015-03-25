@@ -18,6 +18,10 @@ void eth_config_set_address( uint8_t this_addr[ETH_ADDR_LENGTH] ){
   memcpy( this_config_addr, this_addr, ETH_ADDR_LENGTH);
 }
 
+const uint8_t * eth_config_get_address(){
+  return this_config_addr;
+}
+
 int eth_is_multicast(struct eth_header *header ){
   //destination is multicast if lsb of first byte is 1
   return header->dest_addr && 0x01;
@@ -69,26 +73,18 @@ uint8_t * ipv6_physical_address_of( uint8_t dest_ip_addr[IPV6_ADDR_LENGTH] ){
   return (uint8_t*)NULL;
 }
 
-int ipv6_send( struct eth_packet *packet, uint8_t ip_addr[IPV6_ADDR_LENGTH], uint8_t next_header,  uint16_t payload_length ){
-  /* find physical address of ip destination */
-  uint8_t *dest_phy = ipv6_physical_address_of( ip_addr );
-  if( dest_phy == NULL ){
-    /* there was none, cannot send */
-    return 0;
-  }
-  /* set ethernet header fields */
-  memcpy( packet->eth.dest_addr, dest_phy, ETH_ADDR_LENGTH );
-  memcpy( packet->eth.src_addr, this_config_addr, ETH_ADDR_LENGTH );
-  packet->eth.type = htons( ETH_TYPE_IPV6 );
+
+void ipv6_prepare( struct ipv6_header *header, uint8_t dest_ip_addr[IPV6_ADDR_LENGTH], uint8_t next_header,  uint16_t payload_length ){
+  /* clear everything EXCEPT the addresses */
+  memset(header, 0 , IPV6_HEADER_LENGTH - 2 * IPV6_ADDR_LENGTH );
   /* set ip header fields */
-  memset(&(packet->ip), 0 , IPV6_HEADER_LENGTH );
-  packet->ip.version = 6 << 4;
-  packet->ip.payload_length = htons( payload_length );
-  packet->ip.next_header = next_header;
-  packet->ip.hop_limit = IPV6_DEFAULT_HOP_LIMIT;
-  memcpy( packet->ip.src_addr, this_config_ip_addr, IPV6_ADDR_LENGTH );
-  memcpy( packet->ip.dest_addr, ip_addr, IPV6_ADDR_LENGTH );
-  return 1;
+  header->version = 6 << 4;
+  header->payload_length = htons( payload_length );
+  header->next_header = next_header;
+  header->hop_limit = IPV6_DEFAULT_HOP_LIMIT;
+  /* copy dest first - it's probably being copied from the src field of the same header */
+  memcpy( header->dest_addr, dest_ip_addr, IPV6_ADDR_LENGTH );
+  memcpy( header->src_addr, this_config_ip_addr, IPV6_ADDR_LENGTH );
 }
 
 inline uint32_t htonl(  uint32_t host_value){

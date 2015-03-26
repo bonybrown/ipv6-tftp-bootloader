@@ -22,6 +22,20 @@ static int tftp_handler( struct ip_packet *ip , struct udp_packet *udp ){
   return 42;
 }
   
+static void test_udp_bind(void)
+{
+  int result = udp_bind( 69, &tftp_handler );
+  NP_ASSERT_EQUAL( 0 , result ); /* success */
+  result = udp_bind( 69, &tftp_handler );
+  NP_ASSERT_EQUAL( UDP_ERROR_PORT_ALREADY_BOUND , result ); /* same port */
+  int i = 0;
+  for( i = 0; i < UDP_MAX_NUMBER_OF_BINDS -1 ; i++ ){
+    result = udp_bind( 70 + i , &tftp_handler );
+    NP_ASSERT_EQUAL( 0 , result ); /* success */
+  }
+  result = udp_bind( 8000, &tftp_handler );
+  NP_ASSERT_EQUAL( UDP_ERROR_NO_BINDS_AVAILABLE , result ); /* same port */
+}
 
 static void test_udp_dispatch(void)
 {

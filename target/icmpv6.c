@@ -19,14 +19,14 @@ void icmp_response(struct ip_packet *pkt, struct icmpv6_header *icmp, uint8_t ic
 }
 
 int icmp_ping( struct ip_packet *pkt ){
-  struct icmpv6_ping_packet *ping = (struct icmpv6_ping_packet *)(pkt->ip_payload);
+  struct icmpv6_ping_packet *ping = (struct icmpv6_ping_packet *)(pkt->payload);
   uint16_t payload_length = ntohs( pkt->header.payload_length ) ;
   icmp_response(pkt,&ping->header,ICMPV6_TYPE_PING_RESPONSE,payload_length);
   return payload_length;
 }
 
 int icmp_neighbour_solicitation( struct ip_packet *pkt ){
-  struct icmpv6_ns_packet *ns = (struct icmpv6_ns_packet *)(pkt->ip_payload);
+  struct icmpv6_ns_packet *ns = (struct icmpv6_ns_packet *)(pkt->payload);
   uint16_t payload_length = ntohs( pkt->header.payload_length );
 
   if( payload_length <= IPV6_NS_HEADER_LENGTH ){
@@ -60,7 +60,7 @@ int icmp_neighbour_solicitation( struct ip_packet *pkt ){
 }
 
 int icmpv6_dispatch( struct ip_packet *ip_packet ){
-  struct icmpv6_header *icmp = (struct icmpv6_header *)(ip_packet->ip_payload);
+  struct icmpv6_header *icmp = (struct icmpv6_header *)(ip_packet->payload);
   switch( icmp->type ){
     case ICMPV6_TYPE_NS:
       /*neighbour solicitation request*/

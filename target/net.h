@@ -70,22 +70,20 @@ struct ipv6_header{
 #define IPV6_DEFAULT_HOP_LIMIT		64
 
 struct eth_packet{
-  struct eth_header eth;
-  struct ipv6_header ip;
-  uint8_t ip_payload[ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH - IPV6_HEADER_LENGTH];
+  struct eth_header header;
+  uint8_t payload[ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH ];
 } __attribute__((__packed__));
 
-#define IPV6_PAYLOAD_MAX_LENGTH 	(ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH - IPV6_HEADER_LENGTH )
-#define IP_PAYLOAD_FROM_IP(ip_ptr)	((uint8_t *) (ip_ptr + IPV6_HEADER_LENGTH ))
+#define ETH_PAYLOAD_MAX_LENGTH 	(ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH )
 
 
 struct ip_packet{
   struct ipv6_header header;
-  uint8_t ip_payload[ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH - IPV6_HEADER_LENGTH];
+  uint8_t payload[ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH - IPV6_HEADER_LENGTH];
 } __attribute__((__packed__));
 
-#define IP_PACKET_FROM_IP(ip_ptr)	((ip_packet *) (ip_ptr ))
-#define IP_PACKET_FROM_ETH(eth_ptr)	((ip_packet *) (eth_ptr + ETH_HEADER_LENGTH )
+#define IPV6_PAYLOAD_MAX_LENGTH 	(ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH - IPV6_HEADER_LENGTH )
+
 /*
  * Configure the ip layer to use this ip address for this node
  */

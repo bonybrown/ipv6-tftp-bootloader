@@ -62,7 +62,7 @@ static void test_icmpv6_dispatch_ping(void)
   ipv6_config_set_address( me ) ;
   
   memcpy( &pkt.header, ip_ping_req, sizeof( ip_ping_req ) );
-  struct icmpv6_ping_packet *ping = (struct icmpv6_ping_packet *)(pkt.ip_payload);
+  struct icmpv6_ping_packet *ping = (struct icmpv6_ping_packet *)(pkt.payload);
   memcpy( ping, icmp_ping_req, sizeof(icmp_ping_req) );
 
   int result = icmpv6_dispatch( &pkt );
@@ -86,7 +86,7 @@ static void test_icmpv6_dispatch_ns(void)
   
   memcpy( &pkt.header, ip_ns_req, sizeof( ip_ns_req ) );
 
-  struct icmpv6_ns_packet *ns = (struct icmpv6_ns_packet *)(pkt.ip_payload);
+  struct icmpv6_ns_packet *ns = (struct icmpv6_ns_packet *)(pkt.payload);
   memcpy( ns, icmp_ns_req, sizeof(icmp_ns_req) );
   other_eth = ipv6_physical_address_of(them) ;
   NP_ASSERT_EQUAL( NULL, other_eth);

@@ -9,7 +9,7 @@ MAIN_SOURCE=  k12_read.c
 
 MAIN_OBJS=	  $(MAIN_SOURCE:.c=.o)
 
-CODE_SOURCE=  target/net.c target/icmpv6.c
+CODE_SOURCE=  target/net.c target/icmpv6.c target/udp.c
 
 CODE_OBJS=    $(CODE_SOURCE:.c=.o)
 
@@ -20,7 +20,7 @@ test: testrunner
 	./testrunner
         
 
-TEST_SOURCE=  test/net.c test/icmpv6.c
+TEST_SOURCE=  test/net.c test/icmpv6.c test/udp.c
 TEST_OBJS=  $(TEST_SOURCE:.c=.o)
 
 testrunner:  $(TEST_OBJS) $(CODE_OBJS)

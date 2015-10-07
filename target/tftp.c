@@ -1,31 +1,36 @@
 #include "tftp.h"
 #include <string.h>
 
+/* operations on "files" to be performed elsewhere by other code */
+extern void * file_open( const char *filename, const char mode );
+extern void file_seek( void *file, size_t position );
+extern size_t file_read( void *file, uint8_t *buffer, size_t buffer_size );
+extern size_t file_write( void *file, uint8_t *buffer, size_t buffer_size );
+extern void file_close( void *file );
+
+
 enum tftp_session_state{
   Idle = 0,		/* no session */
-  ReadRequested,	/* get request parsed */
-  WriteRequested,	/* put request parsed */
-  AwaitingReadAck,	/* contents being sent */
+  WriteRequested,	/* waiting for data */
+  AwaitingReadAck,	/* contents being sent, waiting for ack */
   AwaitingLastReadAck, /* last block sent, waiting for ack */
-  AwaitingWriteAck	/* contents being received */
 };
 
 
 struct tftp_session{
   enum tftp_session_state state;
-  uint16_t fpos; /* file position*/
   uint16_t remote_port; /* remote end socket number */
   uint16_t local_port; /* local end socket number */
   int block_id; /* id of last block sent/awaiting ack or received/ack sent for*/
+  void *file; /* file open for read/write */
 };
 
-/* thie one, only session in this implementation */
-static struct tftp_session session = {Idle,0,0,0,0};
+/* the one, only session in this implementation */
+static struct tftp_session session = {Idle,0,0,0,NULL};
 static uint16_t local_port = 1024;
 
 const char *tftp_allowed_transfer_mode = "octet";
 #define TFTP_OCTET_STRING_SIZE 6
-
 
 #define TFTP_BLOCK_SIZE 512
 
@@ -60,37 +65,56 @@ struct tftp_header{
 
 
 
-static tftp_open_callback* open_callback = NULL;
-static tftp_read_callback* read_callback = NULL;
-static tftp_write_callback* write_callback = NULL;
-static tftp_close_callback* close_callback = NULL;
-
-void tftp_set_open_callback( tftp_open_callback open_func ){
-  open_callback = open_func;
-}
-void tftp_set_read_callback( tftp_read_callback read_func ){
-  read_callback = read_func;
+void tftp_set_local_port( uint16_t port_number ){
+  local_port = port_number;
 }
 
+int tftp_send_ack( struct ip_packet * ip, struct udp_packet * udp, uint16_t block_number );
 int tftp_send_data( struct ip_packet * ip, struct udp_packet * udp );
 int tftp_send_error(uint16_t error_code, char * error_message, struct ip_packet * ip, struct udp_packet * udp);
 int tftp_response(uint16_t length, struct ip_packet * ip, struct udp_packet * udp);
 void tftp_tid_inc();
 
+int tftp_write_data( struct ip_packet * ip, struct udp_packet * udp ){
+  struct tftp_header * tftp = (struct tftp_header *)udp->payload;
+  uint8_t *data = &tftp->data_byte;
+  uint16_t length = ntohs( udp->header.length ) - UDP_HEADER_LENGTH - 4;
+  int written = file_write( session.file, data, length );
+  if( written == length ){
+    written = tftp_send_ack( ip, udp, session.block_id );
+    session.block_id++;
+    if( length != TFTP_BLOCK_SIZE ){
+      /* short block is last block. close file  */
+      file_close(session.file);
+      tftp_session_reset();
+    }
+    return written;
+  }
+  return tftp_send_error(TFTP_ERROR_ACCESS_VIOLATION, "cannot write file", ip,udp);
+}
+
 
 int tftp_send_data( struct ip_packet * ip, struct udp_packet * udp ){
   struct tftp_header * tftp = (struct tftp_header *)udp->payload;
   uint8_t *data = &tftp->data_byte;
-  session.fpos = (session.block_id-1) << 9; /* block_id * 512 */
-  int to_send = read_callback( session.fpos, data, TFTP_BLOCK_SIZE );
+  file_seek( session.file, (session.block_id-1) << 9); /* block_id * 512 */
+  int to_send = file_read( session.file, data, TFTP_BLOCK_SIZE );
   if( to_send < 0 ){
     return tftp_send_error(TFTP_ERROR_ACCESS_VIOLATION, "cannot read file", ip,udp);
   }
   tftp->op  = htons( TFTP_OP_DATA );
   tftp->block_id = htons(session.block_id);
-  session.state = AwaitingReadAck;
+  session.state = (to_send < TFTP_BLOCK_SIZE) ? AwaitingLastReadAck  : AwaitingReadAck;
   return tftp_response( to_send + 4, ip, udp );
 }
+
+int tftp_send_ack( struct ip_packet * ip, struct udp_packet * udp, uint16_t block_number ){
+  struct tftp_header * tftp = (struct tftp_header *)udp->payload;
+  tftp->op  = htons( TFTP_OP_ACK );
+  tftp->block_id = htons(block_number);
+  return tftp_response( 4, ip, udp );
+}
+
 
 int tftp_send_error(uint16_t error_code, char * error_message, struct ip_packet * ip, struct udp_packet * udp){
   tftp_session_reset();
@@ -122,7 +146,6 @@ void tftp_tid_inc(){
 
 void tftp_session_reset(){
   session.state = Idle;
-  session.fpos = 0;
   session.remote_port = 0;
   session.local_port = 0;
   session.block_id = 0;
@@ -135,7 +158,6 @@ void tftp_session_reset(){
 int tftp_packet_handler(struct ip_packet * ip, struct udp_packet * udp){
   struct tftp_header * tftp = (struct tftp_header *)udp->payload;
   uint16_t op = ntohs(tftp->op);
-  int return_size;
   uint16_t block;
     
   switch( session.state ){
@@ -149,24 +171,34 @@ int tftp_packet_handler(struct ip_packet * ip, struct udp_packet * udp){
         if( strcmp( tftp_allowed_transfer_mode, filename_ptr+filename_size+1 ) != 0 ){
           return tftp_send_error(TFTP_ERROR_FILE_NOT_FOUND,"transfer mode not supported",ip,udp);
         }
-        if(! open_callback(op, filename_ptr ) ){
+        session.file = file_open( filename_ptr, op ==  TFTP_OP_WRQ ? 'w':'r' );
+        if( NULL == session.file ){
           return tftp_send_error(TFTP_ERROR_FILE_NOT_FOUND,"file not found",ip,udp);
         }
-        session.state = op == TFTP_OP_RRQ ? ReadRequested : WriteRequested;
+        tftp_tid_inc();
         session.remote_port = ntohs(udp->header.src_port);
-        session.fpos = 0;
         session.block_id = 1;
         session.local_port = local_port;
-        tftp_tid_inc();
-        return tftp_send_data( ip,udp );
+        if( op == TFTP_OP_RRQ ){
+          return tftp_send_data( ip,udp );
+        }else{
+          session.state = WriteRequested;
+          return tftp_send_ack( ip,udp, 0 );
+        }
       }
       return tftp_send_error(TFTP_ERROR_ILLEGAL_OP,"bad op",ip,udp);
       break;
-    case ReadRequested: /* get request parsed */
+     case WriteRequested: /* waiting for data */
+      if( op != TFTP_OP_DATA ){
+        return tftp_send_error(TFTP_ERROR_ILLEGAL_OP,"bad op",ip,udp);
+      }
+      block = ntohs( tftp->block_id );
+      if( block == session.block_id ){
+        return tftp_write_data( ip, udp );
+      }
+      return tftp_send_ack(ip, udp, session.block_id -1 );
       break;
-    case WriteRequested: /* put request parsed */
-      break;
-    case AwaitingReadAck:  /* contents being sent */
+    case AwaitingReadAck:  /* file being sent */
     case AwaitingLastReadAck:
       if( op != TFTP_OP_ACK){
         return tftp_send_error(TFTP_ERROR_ILLEGAL_OP,"bad op",ip,udp);
@@ -175,18 +207,14 @@ int tftp_packet_handler(struct ip_packet * ip, struct udp_packet * udp){
       if( block == session.block_id ){
         session.block_id++;
         if( session.state == AwaitingLastReadAck ){
-          session.state = Idle;
+          file_close(session.file);
+          tftp_session_reset();
           /* done */
           return 0;
         }
       }
-      return_size = tftp_send_data( ip,udp );
-      if( return_size < TFTP_BLOCK_SIZE ){
-        session.state = AwaitingLastReadAck;
-      }
-      return return_size;
-      break;
-    case AwaitingWriteAck:  /* contents being received */
+      return tftp_send_data( ip,udp );
+      
       break;
   }
   return 0;

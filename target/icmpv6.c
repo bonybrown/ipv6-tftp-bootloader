@@ -11,7 +11,7 @@ void icmp_response(struct ip_packet *pkt, struct icmpv6_header *icmp, uint8_t ic
   icmp->type = icmp_type;
   icmp->checksum = 0;
   
-  ipv6_prepare( &pkt->header, pkt->header.src_addr, IPV6_NEXT_HEADER_ICMPV6, payload_length );
+  ipv6_prepare( &pkt->header, pkt->header.src_addr, IPV6_NEXT_HEADER_ICMPV6, payload_length, 255 );
 
   checksum = ipv6_pseduo_header_checksum( pkt->header.src_addr, pkt->header.dest_addr, payload_length, IPV6_NEXT_HEADER_ICMPV6 );
   checksum_summate(&checksum, icmp, payload_length);

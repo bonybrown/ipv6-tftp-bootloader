@@ -17,7 +17,7 @@ const static uint8_t icmp_ping_req[] = {
 
   
 const static uint8_t ip_ping_expected[] =  {
-  0x60, 0x00, 0x00, 0x00, 0x00, 0x40, 0x3a, 0x40, 
+  0x60, 0x00, 0x00, 0x00, 0x00, 0x40, 0x3a, 0xff, 
   MY_IP, 
   OTHER_IP };
   
@@ -34,7 +34,7 @@ const static uint8_t ip_ns_req[] =  {
   MY_IP };
   
 const static uint8_t ip_ns_expected[] =  {
-  0x60, 0x00, 0x00, 0x00, 0x00, 0x20, 0x3a, 0x40, 
+  0x60, 0x00, 0x00, 0x00, 0x00, 0x20, 0x3a, 0xff, 
   MY_IP, 
   OTHER_IP };
   
@@ -100,6 +100,9 @@ static void test_icmpv6_dispatch_ns(void)
   
   other_eth = ipv6_physical_address_of(them) ;
   NP_ASSERT_EQUAL( 0, memcmp(  expected_other_eth , other_eth, ETH_ADDR_LENGTH));
+  
+  /* rfc4861 - 6.1.2 hop limit MUST be 255 */
+  NP_ASSERT_EQUAL( 255, pkt.header.hop_limit);
   
 }
   

@@ -9,6 +9,8 @@ extern size_t file_write( void *file, uint8_t *buffer, size_t buffer_size );
 extern void file_close( void *file );
 
 
+extern size_t strnlen(const char *s, size_t maxlen);
+
 enum tftp_session_state{
   Idle = 0,		/* no session */
   WriteRequested,	/* waiting for data */
@@ -27,7 +29,7 @@ struct tftp_session{
 
 /* the one, only session in this implementation */
 static struct tftp_session session = {Idle,0,0,0,NULL};
-static uint16_t local_port = 1024;
+static uint16_t local_port = 50000;
 
 const char *tftp_allowed_transfer_mode = "octet";
 #define TFTP_OCTET_STRING_SIZE 6
@@ -98,8 +100,8 @@ int tftp_send_data( struct ip_packet * ip, struct udp_packet * udp ){
   struct tftp_header * tftp = (struct tftp_header *)udp->payload;
   uint8_t *data = &tftp->data_byte;
   file_seek( session.file, (session.block_id-1) << 9); /* block_id * 512 */
-  int to_send = file_read( session.file, data, TFTP_BLOCK_SIZE );
-  if( to_send < 0 ){
+  size_t to_send = file_read( session.file, data, TFTP_BLOCK_SIZE );
+  if( to_send == 0 ){
     return tftp_send_error(TFTP_ERROR_ACCESS_VIOLATION, "cannot read file", ip,udp);
   }
   tftp->op  = htons( TFTP_OP_DATA );
@@ -132,8 +134,16 @@ int tftp_response(uint16_t length, struct ip_packet * ip, struct udp_packet * ud
   udp->header.dest_port = udp->header.src_port;
   udp->header.src_port = htons( local_port );
   udp->header.checksum = 0;
-  checksum_summate(&(udp->header.checksum), udp, length );
-  ipv6_prepare( &ip->header, ip->header.src_addr, IPV6_NEXT_HEADER_UDP, length );
+  ipv6_prepare( &ip->header, ip->header.src_addr, IPV6_NEXT_HEADER_UDP, length, IPV6_DEFAULT_HOP_LIMIT );
+
+  uint16_t checksum = 0;
+  checksum = ipv6_pseduo_header_checksum(
+    ip->header.src_addr,
+    ip->header.dest_addr,
+    length,
+    IPV6_NEXT_HEADER_UDP);
+  checksum_summate(&checksum, udp, length );
+  udp->header.checksum = ~checksum;
   return length;
 }
 
@@ -146,6 +156,7 @@ void tftp_tid_inc(){
 
 void tftp_session_reset(){
   session.state = Idle;
+  udp_unbind( session.local_port );
   session.remote_port = 0;
   session.local_port = 0;
   session.block_id = 0;
@@ -179,6 +190,7 @@ int tftp_packet_handler(struct ip_packet * ip, struct udp_packet * udp){
         session.remote_port = ntohs(udp->header.src_port);
         session.block_id = 1;
         session.local_port = local_port;
+        udp_bind( local_port, tftp_packet_handler );
         if( op == TFTP_OP_RRQ ){
           return tftp_send_data( ip,udp );
         }else{

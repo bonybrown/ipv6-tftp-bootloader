@@ -3,9 +3,9 @@
 #
 
 TARGET	= boot
-PROJECT_SOURCE=  main.c serial.c network.c i2c.c mc24aa00.c enc28j60.c timer.c
+PROJECT_SOURCE=  main.c serial.c net.c i2c.c mc24aa00.c enc28j60.c timer.c flash_file.c icmpv6.c tftp.c udp.c
 
-CPU := 33FJ128GP204
+CPU := 33FJ128GP804
 
 
 # check mplab version

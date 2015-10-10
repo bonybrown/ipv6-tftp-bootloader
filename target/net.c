@@ -74,14 +74,14 @@ uint8_t * ipv6_physical_address_of( uint8_t dest_ip_addr[IPV6_ADDR_LENGTH] ){
 }
 
 
-void ipv6_prepare( struct ipv6_header *header, uint8_t dest_ip_addr[IPV6_ADDR_LENGTH], uint8_t next_header,  uint16_t payload_length ){
+void ipv6_prepare( struct ipv6_header *header, uint8_t dest_ip_addr[IPV6_ADDR_LENGTH], uint8_t next_header,  uint16_t payload_length, uint8_t hop_limit ){
   /* clear everything EXCEPT the addresses */
   memset(header, 0 , IPV6_HEADER_LENGTH - 2 * IPV6_ADDR_LENGTH );
   /* set ip header fields */
   header->version = 6 << 4;
   header->payload_length = htons( payload_length );
   header->next_header = next_header;
-  header->hop_limit = IPV6_DEFAULT_HOP_LIMIT;
+  header->hop_limit = hop_limit;
   /* copy dest first - it's probably being copied from the src field of the same header */
   memcpy( header->dest_addr, dest_ip_addr, IPV6_ADDR_LENGTH );
   memcpy( header->src_addr, this_config_ip_addr, IPV6_ADDR_LENGTH );

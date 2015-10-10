@@ -37,6 +37,19 @@ static void test_udp_bind(void)
   NP_ASSERT_EQUAL( UDP_ERROR_NO_BINDS_AVAILABLE , result ); /* same port */
 }
 
+
+static void test_udp_unbind(void)
+{
+  int result = udp_bind( 69, &tftp_handler );
+  NP_ASSERT_EQUAL( 0 , result ); /* success */
+  result = udp_unbind( 6969 );
+  NP_ASSERT_EQUAL( UDP_ERROR_PORT_NOT_BOUND , result ); /* not bound port */
+  result = udp_unbind( 69 );
+  NP_ASSERT_EQUAL( 0 , result ); /* unbind success */
+}
+
+
+
 static void test_udp_dispatch(void)
 {
   struct ip_packet pkt;

@@ -107,6 +107,8 @@ static void test_tftp_file_not_found(void){
   
   struct ip_packet pkt;
   struct udp_packet *udp = &(pkt.payload);
+  memset( &pkt, 0 , sizeof(pkt));
+
   uint8_t *udp_bytes = (uint8_t*)udp;
 
   const uint8_t not_found_rrq[] = "\xea\x9e\x00\x45\x00\x00\xff\xff\x00\001not_found\x00octet\x00";
@@ -136,6 +138,7 @@ static void test_tftp_only_octet_supported(void){
   
   struct ip_packet pkt;
   struct udp_packet *udp = &(pkt.payload);
+  memset( &pkt, 0 , sizeof(pkt));
   uint8_t *udp_bytes = (uint8_t*)udp;
 
   const uint8_t netascii_rrq[] = "\xea\x9e\x00\x45\x00\x00\xff\xff\x00\001file\x00netascii\x00";
@@ -168,6 +171,7 @@ static void test_tftp_rrq(void)
   
   struct ip_packet pkt;
   struct udp_packet *udp = &(pkt.payload);
+  memset( &pkt, 0 , sizeof(pkt));
   uint8_t *tftp_data = udp->payload + 4;
   uint8_t *udp_bytes = (uint8_t*)udp;
   uint16_t tftp_source_port;
@@ -286,6 +290,7 @@ static void test_tftp_wrq(void){
   
   struct ip_packet pkt;
   struct udp_packet *udp = &(pkt.payload);
+  memset( &pkt, 0 , sizeof(pkt));
   uint8_t *udp_bytes = (uint8_t*)udp;
   
   memcpy( udp, client_wrq, sizeof(client_wrq) );

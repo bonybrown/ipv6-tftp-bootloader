@@ -37,6 +37,14 @@ typedef int (udp_callback)(struct ip_packet *, struct udp_packet *);
 int udp_bind( uint16_t port, udp_callback *callback_func );
 #define UDP_ERROR_PORT_ALREADY_BOUND  -1
 #define UDP_ERROR_NO_BINDS_AVAILABLE  -2
+
+/*
+ * Unbind a bound port.
+ * Returns 0 on success, UDP_ERROR_PORT_NOT_BOUND
+ * if the specified port is not bound
+ */
+int udp_unbind( uint16_t port );
+#define UDP_ERROR_PORT_NOT_BOUND -3
 /*
  * Process the ip ip_packet
  * Updates the ip_packet with data to be sent

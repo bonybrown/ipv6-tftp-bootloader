@@ -104,7 +104,7 @@ static void test_ipv6_prepare()
 
   struct ipv6_header header;
   memset( &header, 0xff, sizeof( header ) );
-  ipv6_prepare( &header, other_ip_addr, IPV6_NEXT_HEADER_UDP, 0x1fe);
+  ipv6_prepare( &header, other_ip_addr, IPV6_NEXT_HEADER_UDP, 0x1fe,IPV6_DEFAULT_HOP_LIMIT);
   
   const uint8_t expected[IPV6_HEADER_LENGTH] = {
     0x60, 0x00, 0x00, 0x00, //version/flow-control
@@ -128,6 +128,47 @@ static void test_ipv6_pseduo_header_checksum(void)
   uint8_t next_header_value = 58;
   uint16_t result =ipv6_pseduo_header_checksum( src_addr, dest_addr, upper_layer_packet_length, next_header_value ); 									
   NP_ASSERT_EQUAL(result, 0x3506);
+}
+
+static void test_udp_checksum(void)
+{
+  uint8_t src_addr[16]= { 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf2, 0xde, 0xf1, 0xff,
+  0xfe, 0x77, 0x6a, 0xc6 };
+  uint8_t dest_addr[16]={ 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x1e, 0xc0, 0xff,
+  0xfe, 0x81, 0xf9, 0x1b };
+  uint32_t upper_layer_packet_length = 25;
+  uint8_t next_header_value = 17;
+  
+  uint8_t udp_data[] = {  
+    0xa1, 0x25, 0x00, 0x45, 0x00, 0x19,  0  , 0   , /*src prt, dest, len, checksum */
+    0x00, 0x01, 0x62, 0x6f, 0x6f, 0x74, 0x2e, 0x64, 0x61, 0x74, 0x00, /* rrq, boot.dat */
+    0x6f, 0x63, 0x74, 0x65, 0x74, 0x00 /* octet */
+  };
+  uint16_t result =ipv6_pseduo_header_checksum( src_addr, dest_addr, upper_layer_packet_length, next_header_value );  
+  checksum_summate( &result, udp_data, sizeof( udp_data ) );
+  result = ~result;
+  NP_ASSERT_EQUAL( 0x622d, result);
+}
+
+static void test_udp_checksum2(void)
+{
+  uint8_t src_addr[16]={ 
+    0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x02, 0x1e, 0xc0, 0xff,  0xfe, 0x81, 0xf9, 0x1b };
+  uint8_t dest_addr[16]= { 
+    0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0xf2, 0xde, 0xf1, 0xff, 0xfe, 0x77, 0x6a, 0xc6 };
+  uint32_t upper_layer_packet_length = 12;
+  uint8_t next_header_value = 17;
+  
+  uint8_t udp_data[] = {  
+    0xc3, 0x51, 0xe3, 0x0e, 0x00, 0x0c, 0  , 0 ,/*src prt, dest, len, checksum */
+    0x00, 0x04, 0x00, 0x00 /* ack, block 0 */
+  };
+  uint16_t result =ipv6_pseduo_header_checksum( src_addr, dest_addr, upper_layer_packet_length, next_header_value );  
+  checksum_summate( &result, udp_data, sizeof( udp_data ) );
+  result = ~result;
+  NP_ASSERT_EQUAL( 0x9753, result);
 }
 
 static void test_htonl(void)

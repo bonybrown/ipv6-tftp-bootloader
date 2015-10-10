@@ -27,6 +27,18 @@ int udp_bind( uint16_t port, udp_callback * callback_func ){
   return UDP_ERROR_NO_BINDS_AVAILABLE;
 }  
 
+int udp_unbind( uint16_t port ){
+  int i;
+  /* find bind */
+  for(i =0 ; i < UDP_MAX_NUMBER_OF_BINDS; i++ ){
+    if( port == udp_bind_list[i].port ){
+      udp_bind_list[i].port = 0;
+      udp_bind_list[i].func = 0;
+      return 0;
+    }
+  }
+  return UDP_ERROR_PORT_NOT_BOUND;
+}
 /*
  * Process the ip ip_packet
  * Updates the ip_packet with data to be sent

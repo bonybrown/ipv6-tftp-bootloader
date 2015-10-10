@@ -1,4 +1,5 @@
 #ifndef __NET_H__
+#define __NET_H__
 
 #include <stdint.h>
 
@@ -83,7 +84,7 @@ struct ip_packet{
 } __attribute__((__packed__));
 
 #define IPV6_PAYLOAD_MAX_LENGTH 	(ETH_MAX_PACKET_SIZE - ETH_HEADER_LENGTH - IPV6_HEADER_LENGTH )
-
+#define IP_PACKET_FROM_ETH(eth_ptr) ((struct ip_packet*) ((eth_ptr)->payload))
 /*
  * Configure the ip layer to use this ip address for this node
  */
@@ -96,7 +97,7 @@ uint16_t ipv6_payload_length(struct ipv6_header *header );
 /*
  * Prepare the ipv6 packet to be sent 
  */
-void ipv6_prepare( struct ipv6_header *header, uint8_t ip_addr[IPV6_ADDR_LENGTH], uint8_t next_header,  uint16_t payload_length );
+void ipv6_prepare( struct ipv6_header *header, uint8_t ip_addr[IPV6_ADDR_LENGTH], uint8_t next_header,  uint16_t payload_length, uint8_t hop_limit );
 
 
 /*

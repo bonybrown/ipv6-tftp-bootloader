@@ -101,9 +101,6 @@ int tftp_send_data( struct ip_packet * ip, struct udp_packet * udp ){
   uint8_t *data = &tftp->data_byte;
   file_seek( session.file, (session.block_id-1) << 9); /* block_id * 512 */
   size_t to_send = file_read( session.file, data, TFTP_BLOCK_SIZE );
-  if( to_send == 0 ){
-    return tftp_send_error(TFTP_ERROR_ACCESS_VIOLATION, "cannot read file", ip,udp);
-  }
   tftp->op  = htons( TFTP_OP_DATA );
   tftp->block_id = htons(session.block_id);
   session.state = (to_send < TFTP_BLOCK_SIZE) ? AwaitingLastReadAck  : AwaitingReadAck;

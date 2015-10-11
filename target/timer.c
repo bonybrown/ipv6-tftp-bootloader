@@ -3,10 +3,12 @@
 
 static unsigned int timer_value;
 
-void __attribute__((__interrupt__, no_auto_psv)) _T2Interrupt(void)
+void __attribute__((__interrupt__, no_auto_psv)) _AltT2Interrupt(void)
 {
 	IFS0bits.T2IF = 0;  // Clear Timer1 Interrupt Flag
 	timer_value++;
+  //PORT B 5 output toggle
+  LATBbits.LATB5 = !PORTBbits.RB5;
 }
 
 /*
@@ -34,6 +36,7 @@ void timer_init(void) {
   IEC0bits.T2IE = 1; // Enable Timer2 interrupt
   T2CONbits.TON = 1; // Start Timer
 
+  TRISBbits.TRISB5 = 0; //PORT B 5 output
 }
 
 /* delay for a number of milliseconds. This is blocking */

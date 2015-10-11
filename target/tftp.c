@@ -3,7 +3,7 @@
 
 /* operations on "files" to be performed elsewhere by other code */
 extern void * file_open( const char *filename, const char mode );
-extern void file_seek( void *file, size_t position );
+extern void file_seek( void *file, uint32_t position );
 extern size_t file_read( void *file, uint8_t *buffer, size_t buffer_size );
 extern size_t file_write( void *file, uint8_t *buffer, size_t buffer_size );
 extern void file_close( void *file );
@@ -99,7 +99,9 @@ int tftp_write_data( struct ip_packet * ip, struct udp_packet * udp ){
 int tftp_send_data( struct ip_packet * ip, struct udp_packet * udp ){
   struct tftp_header * tftp = (struct tftp_header *)udp->payload;
   uint8_t *data = &tftp->data_byte;
-  file_seek( session.file, (session.block_id-1) << 9); /* block_id * 512 */
+  uint32_t seek_pos = session.block_id-1;
+  seek_pos <<= 9;/* block_id * 512 */
+  file_seek( session.file, seek_pos); 
   size_t to_send = file_read( session.file, data, TFTP_BLOCK_SIZE );
   tftp->op  = htons( TFTP_OP_DATA );
   tftp->block_id = htons(session.block_id);

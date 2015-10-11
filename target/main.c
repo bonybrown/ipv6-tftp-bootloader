@@ -49,6 +49,9 @@ int main()
   CLKDIVbits.PLLPOST=0;// PLLPOST (N1) 0=/2
   while(!OSCCONbits.LOCK);//wait for PLL ready
   
+  /*switch to alt interrupt vector */
+  INTCON2bits.ALTIVT = 1;
+  
   dbg_setup_uart();
   puts("IPV6 network bootloader");
   SRbits.IPL = 0;	// All interupt levels enabled
@@ -71,8 +74,8 @@ int main()
   ipv6_address[13] =  mac_address[3];
   ipv6_address[14] =  mac_address[4];
   ipv6_address[15] =  mac_address[5];
-   
-  printf("EUI64: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\n",ipv6_address[0],ipv6_address[1],ipv6_address[2],ipv6_address[3],ipv6_address[4],ipv6_address[5],ipv6_address[6],ipv6_address[7]);
+  
+  printf("IP ADDR: %02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x\n",ipv6_address[0],ipv6_address[1],ipv6_address[2],ipv6_address[3],ipv6_address[4],ipv6_address[5],ipv6_address[6],ipv6_address[7],ipv6_address[8],ipv6_address[9],ipv6_address[10],ipv6_address[11],ipv6_address[12],ipv6_address[13],ipv6_address[14],ipv6_address[15]);
   
   puts("enc28j60 init");
   enc28j60Init( mac_address );

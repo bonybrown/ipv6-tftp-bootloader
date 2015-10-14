@@ -16,7 +16,7 @@
 #include "button.h"
 
 //it's important to keep configuration bits that are compatible with the bootloader
-//if you change it from the internall/PLL clock, the bootloader won't run correctly
+//if you change it from the internall/PLL clock, target program may not run correctly
 
 _FOSCSEL(FNOSC_FRCPLL)            //INT OSC with PLL (always keep this setting)
 _FOSC(OSCIOFNC_OFF & POSCMD_NONE) //disable external OSC (always keep this setting)
@@ -24,17 +24,13 @@ _FWDT(FWDTEN_OFF)                 //watchdog timer off
 _FICD(JTAGEN_OFF & ICS_PGD1);     //JTAG debugging off, debugging on PG1 pins enabled
 
 static uint8_t mac_address[MAC_ADDRESS_SIZE];
-//static uint8_t eui64[8];
 static uint8_t ipv6_address[IPV6_ADDR_LENGTH] = {0xfe,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 
-void dump_packet(uint8_t *p, size_t s ){
-  size_t i = 0;
-  for(i=0; i < s ; i++){
-    printf("%02x ", *p++ );
-  }
-  puts("");
-}
+/* For passing the button hold count to the target program */
+int reset_button_hold_count __attribute__((section("bootloader_data"),address(0x800))) = 0;
 
+
+/* Because the standard libraries don't include an implementation of strnlen */
 size_t strnlen(const char *s, size_t maxlen){
   size_t result = 0 ;
   while( result < maxlen && *s != '\0' ){
@@ -44,18 +40,25 @@ size_t strnlen(const char *s, size_t maxlen){
   return result;
 }
 
-
+/* Called to start the target program.
+ * Will not return if successful
+ * Will sound beeper and return if not
+ */
 void start_target_prog(uint8_t function_code){
   uint8_t buf[3] = {0};
   _memcpy_p2d24(buf,0x3000, 3);
-  printf("GOTO: %02x,%02x,%02x\n",buf[0],buf[1],buf[2]);
+  printf("%02x,%02x,%02x\n",buf[0],buf[1],buf[2]);
   if( buf[0] == 0xff && buf[1] == 0xff && buf[2] == 0xff ){
-    /* guess it's blank? */
-    beep(BEEP_PITCH_HIGH, 200);
-    beep(BEEP_PITCH_LOW, 800);
+    /* guess it's blank?. Do not jump to this */
+    beep(BEEP_PITCH_LOW, 300);
+    timer_delay_ms(100);
+    beep(BEEP_PITCH_LOW, 300);
+    timer_delay_ms(100);
+    beep(BEEP_PITCH_LOW, 300);
     return;
   }
-  RXBUF0 = function_code;
+  /* Going to launch target */
+  reset_button_hold_count = function_code;
   SRbits.IPL = 7; // All interupt levels disabled
   INTCON2bits.ALTIVT = 0; //back to original INT VT
   asm("GOTO 0x3000");
@@ -73,7 +76,11 @@ int main()
   while(!OSCCONbits.LOCK);//wait for PLL ready
   
   
-  /*switch to alt interrupt vector */
+  /* 
+   * Switch to alt interrupt vector.
+   * The bootloader will only use the alternate vectors
+   * The primary ones are reserved for the target
+   */
   INTCON2bits.ALTIVT = 1;
   
   dbg_setup_uart();
@@ -115,6 +122,7 @@ int main()
   
   udp_bind( 69, tftp_packet_handler );
   
+  /* read a packet, process and respond if required */
   while(1) {
     uint16_t packet_size, response_length = 0;
     struct eth_packet eth;

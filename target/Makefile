@@ -3,7 +3,7 @@
 #
 
 TARGET	= boot
-PROJECT_SOURCE=  main.c serial.c net.c i2c.c mc24aa00.c enc28j60.c timer.c flash_file.c icmpv6.c tftp.c udp.c
+PROJECT_SOURCE=  main.c serial.c net.c i2c.c mc24aa00.c enc28j60.c timer.c flash_file.c icmpv6.c tftp.c udp.c beep.c button.c
 
 CPU := 33FJ128GP804
 

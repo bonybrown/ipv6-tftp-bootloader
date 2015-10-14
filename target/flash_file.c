@@ -142,6 +142,10 @@ struct mem_file * file_open( const char *filename, const char mode){
   if( strcmp("reset",filename)==0 && mode=='w' ){
     asm("RESET");
   }
+  /* filename to upload must be boot.bin */
+  if( ! ( strcmp("boot.bin",filename)==0 && mode=='w' ) ){
+    return NULL;
+  }
   memset( the_file.buffer, 0, PRG_MEM_BUFFER_SIZE);
   the_file.base_address = 0;
   the_file.write_address = the_file.base_address;

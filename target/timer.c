@@ -1,7 +1,7 @@
 #include "timer.h"
 #include <p33Fxxxx.h>
 
-static unsigned int timer_value;
+static volatile uint16_t timer_value;
 
 void __attribute__((__interrupt__, no_auto_psv)) _AltT2Interrupt(void)
 {
@@ -45,5 +45,9 @@ void timer_delay_ms( uint16_t milliseconds ){
     while( timer_value != stop_value){
       //waste time
     }
+}
+
+uint16_t timer_now_ms(){
+  return timer_value;
 }
 

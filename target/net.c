@@ -10,7 +10,7 @@ uint8_t dest_ip_addr[IPV6_ADDR_LENGTH];
 uint8_t dest_physical_addr[ETH_ADDR_LENGTH];
 };
 
-#define PHYSICAL_MAP_ENTRIES	2
+#define PHYSICAL_MAP_ENTRIES	8
 static struct physical_map_entry this_physical_map[PHYSICAL_MAP_ENTRIES];
 static int physical_map_current = 0;
 

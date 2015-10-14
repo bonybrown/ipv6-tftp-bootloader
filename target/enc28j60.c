@@ -231,7 +231,6 @@ void enc28j60Init(uint8_t* mac_address )
 void enc28j60DeviceInit(uint8_t* mac_address ) {
     uint8_t i;
     // initialize I/O
-    printf(" eth device init\n");
     /* custom pin assignments for our hardware
       are configured in HardwareProfile.h
       and defined to generic ENC_* names
@@ -258,18 +257,15 @@ void enc28j60DeviceInit(uint8_t* mac_address ) {
     ENC_HARDRESET();
 
     enc28j60WriteOp(ENC28J60_SOFT_RESET, 0, ENC28J60_SOFT_RESET);
-    puts(" eth reset delay");
     // ERRATA Note 2 - ESTAT.CLKRDY is not reliable for clock recovery after reset as 
     // might not have been cleared by the reset electronics. Replace with delay of 1ms
     timer_delay_ms(10);
 	
-    puts(" eth reset delay end");
     // check CLKRDY bit to see if reset is complete
     do{
 	    i = enc28j60Read(ESTAT);
     }
     while((i & 0x08) || (~i & ESTAT_CLKRDY));
-    puts(" eth ready");
     // Bank 0 stuff
     // Set buffer boundaries to allocate internal 8K ram (0x0000 to 1FFF)
     

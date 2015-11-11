@@ -24,7 +24,7 @@ test: testrunner
 	./testrunner
         
 
-TEST_SOURCE=  test.c test/net.c test/icmpv6.c test/udp.c test/tftp.c
+TEST_SOURCE=  test/net.c test/icmpv6.c test/udp.c test/tftp.c
 TEST_OBJS=    $(TEST_SOURCE:.c=.o)
 TEST_GCNO=    $(TEST_SOURCE:.c=.gcno)
 TEST_GCDA=    $(TEST_SOURCE:.c=.gcda)
@@ -45,3 +45,5 @@ coverage:  testrunner
 	lcov --output-file $(PROJECT).info --remove $(PROJECT).info '/test*'
 	rm -rf coverage/*
 	genhtml -o coverage --title "$(PROJECT) test coverage $(shell date)" --num-spaces 4 $(PROJECT).info
+
+.PHONY: clean coverage

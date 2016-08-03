@@ -1,49 +1,77 @@
-CC=gcc
+all: $(TARGET)
 
-PROJECT= ipv6_bootloader
+#The docker image name to use
+DOCKER_IMAGE_NAME := microchip/xc16
 
-NOVAPROVA_CFLAGS= $(shell pkg-config --cflags novaprova)
-NOVAPROVA_LIBS= $(shell pkg-config --libs novaprova)
+#The goals to defer to the container. All others run locally
+DOCKER_GOALS := all bin
 
-CFLAGS= --coverage -Wall -g $(NOVAPROVA_CFLAGS)
-
-MAIN_SOURCE=  k12_read.c
-
-MAIN_OBJS=	  $(MAIN_SOURCE:.c=.o)
+#Everything below this line is boilerplate. Any configuration should be the parameters above here
+#------------------------------------------------------------------------------------------------
 
 
-CODE_SOURCE=  target/net.c target/icmpv6.c target/udp.c target/tftp.c
-CODE_OBJS=    $(CODE_SOURCE:.c=.o)
-CODE_GCNO=    $(CODE_SOURCE:.c=.gcno)
-CODE_GCDA=    $(CODE_SOURCE:.c=.gcda)
-
-all:	$(CODE_OBJS) $(MAIN_OBJS)
-	$(LINK.c) -o k12_read $(MAIN_OBJS) $(CODE_OBJS) 
-
-test: testrunner
-	./testrunner
-        
-
-TEST_SOURCE=  test/net.c test/icmpv6.c test/udp.c test/tftp.c
-TEST_OBJS=    $(TEST_SOURCE:.c=.o)
-TEST_GCNO=    $(TEST_SOURCE:.c=.gcno)
-TEST_GCDA=    $(TEST_SOURCE:.c=.gcda)
-
-testrunner:  $(TEST_OBJS) $(CODE_OBJS)
-	$(LINK.c) -o $@ $(TEST_OBJS) $(CODE_OBJS) $(NOVAPROVA_LIBS)
-        
-clean:
-	$(RM) k12_read testrunner $(PROJECT).info $(CODE_OBJS) $(TEST_OBJS) $(MAIN_OBJS) $(CODE_GCDA) $(CODE_GCNO) $(TEST_GCDA) $(TEST_GCNO)
-                
+.PHONY: docker clean
 
 
-coverage:  testrunner
-	$(RM) $(TEST_GCDA) $(MYCODE_GCDA)
-	mkdir -p coverage
-	./testrunner
-	lcov --base-directory . --directory . --capture --output-file $(PROJECT).info
-	lcov --output-file $(PROJECT).info --remove $(PROJECT).info '/test*'
-	rm -rf coverage/*
-	genhtml -o coverage --title "$(PROJECT) test coverage $(shell date)" --num-spaces 4 $(PROJECT).info
 
-.PHONY: clean coverage
+
+
+#make use_docker a prerequisite for the goals listed in DOCKER_GOALS
+$(foreach goal,$(DOCKER_GOALS),$(eval $(goal): use_docker))
+#is equivalent to these lines below, if DOCKER_GOALS == all bin
+#all: use_docker
+#bin: use_docker
+
+
+
+#Describe the git revision if GIT_TAG not passed in from environment
+#git will not exist in the container, so read it here, and pass it in.
+ifndef GIT_TAG
+GIT_TAG = $(shell git describe --tags --always 2>/dev/null)
+endif
+
+TOP_DIR = $(shell git rev-parse --show-toplevel)
+
+#Set MAKECMDGOALS to default goal (usually, this is "all" ) if no goal specified
+ifeq ($(MAKECMDGOALS),)
+ MAKECMDGOALS = $(.DEFAULT_GOAL)
+endif
+
+#Look for the docker image
+FOUND_DOCKER_IMAGE :=
+#Only for the goals we defined as DOCKER_GOALS above
+ifneq ($(filter $(MAKECMDGOALS),$(DOCKER_GOALS)),)
+ #Look for the "docker" command. This should only succeed outside the container (on the host)
+ DOCKER_CMD := $(shell which docker)
+ ifneq ($(DOCKER_CMD),)
+  #Check that we have a docker image with the expected name
+  FOUND_DOCKER_IMAGE = $(shell docker images -q $(DOCKER_IMAGE_NAME))
+ endif
+endif
+
+
+#If we have found the docker image to run inside of, just launch make in the container
+ifneq ($(FOUND_DOCKER_IMAGE),)
+ $(info Making goal "$(MAKECMDGOALS)" on docker image "$(DOCKER_IMAGE_NAME)")
+ #must run as the same user as locally, so files have the same permissions
+ UID := $(shell id --user):$(shell id --group)
+ #we want to run make in same directory we started in locally.
+ THIS_DIR := $(shell pwd)
+ #work out where that is, using the relative path from the git root to pwd
+ REL_DIR := $(shell realpath --relative-to=$(TOP_DIR) $(THIS_DIR) )
+
+use_docker:
+	docker run -u $(UID) -v $(TOP_DIR):/data:rw --workdir /data/$(REL_DIR) --env GIT_TAG=$(GIT_TAG) $(DOCKER_IMAGE_NAME) make $(MFLAGS) $(MAKECMDGOALS)
+
+
+else
+#don't use docker. define the use_docker target as empty
+use_docker: ;
+#and include the project orignal makefile
+ include Makefile.original
+endif
+
+#define a target to build the required docker image
+docker:
+	docker build -t $(DOCKER_IMAGE_NAME) $(TOP_DIR)/docker/$(DOCKER_IMAGE_NAME)
+

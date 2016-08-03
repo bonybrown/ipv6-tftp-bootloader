@@ -1,0 +1,47 @@
+#
+# Makefile for dsPIC33FJ128GP804
+#
+
+TARGET	= boot.out
+HEXOUT = boot.hex
+
+PROJECT_SOURCE=  target/main.c target/serial.c target/net.c target/i2c.c target/mc24aa00.c target/enc28j60.c target/timer.c target/flash_file.c target/icmpv6.c target/tftp.c target/udp.c target/beep.c target/button.c
+
+CPU := 33FJ128GP804
+LINKER_SCRIPT := target/$(CPU).gld
+
+XC16_PATH = /opt/microchip/xc16/v1.26/bin/
+
+CC       = $(XC16_PATH)xc16-gcc
+LD       = $(XC16_PATH)xc16-gcc
+AS       = $(XC16_PATH)xc16-as
+AR       = $(XC16_PATH)xc16-ar
+OBJCOPY  = $(XC16_PATH)xc16-objcopy
+STRIP    = $(XC16_PATH)xc16-strip
+BIN2HEX  = $(XC16_PATH)xc16-bin2hex
+
+
+
+CFLAGSNO = -mcpu=$(CPU) -Wall -ffunction-sections -O1
+CFLAGS  += $(CFLAGSNO)
+LDFLAGS = -mcpu=$(CPU) -Wl,--gc-sections,--cref,-T$(LINKER_SCRIPT),--report-mem,-Map="$(TARGET).map",--heap=128
+
+
+
+PROJECT_OBJECTFILES = $(PROJECT_SOURCE:.c=.o)
+
+all:	$(PROJECT_OBJECTFILES)
+	$(LD) $(LDFLAGS) $(PROJECT_OBJECTFILES) -o $(TARGET) 
+	$(BIN2HEX) $(TARGET)
+
+
+clean:	
+	$(RM) $(TARGET).map $(TARGET).bin $(HEXOUT) $(TARGET) $(PROJECT_OBJECTFILES)
+
+
+prog:
+	pk2cmd -r -p -m -f$(HEXOUT)
+
+bin:
+	srec_cat $(HEXOUT) -Intel -Exclude 0x01F00000 0x02000000 -Output $(TARGET).bin -Binary
+	

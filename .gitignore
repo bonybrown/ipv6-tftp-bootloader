@@ -1,3 +1,6 @@
 .kdev4/
-coverage/
+test/coverage/
+*/*.gcno
+*/*.gcda
+*/*.o
 

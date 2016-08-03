@@ -1,5 +1,5 @@
 #include <libpic30.h>
-#include <p33Fxxxx.h>
+#include <xc.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>

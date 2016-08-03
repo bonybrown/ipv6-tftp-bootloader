@@ -1,6 +1,6 @@
 #include "beep.h"
 #include "timer.h"
-#include <p33Fxxxx.h>
+#include <xc.h>
 
 
 static void beep_set_pitch( uint16_t pitch ){

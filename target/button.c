@@ -2,7 +2,7 @@
 #include "beep.h"
 #include "timer.h"
 
-#include <p33Fxxxx.h>
+#include <xc.h>
 
 
 #define RESET_BTN_INPUT (PORTAbits.RA7)

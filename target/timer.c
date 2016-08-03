@@ -1,5 +1,5 @@
 #include "timer.h"
-#include <p33Fxxxx.h>
+#include <xc.h>
 
 static volatile uint16_t timer_value;
 

@@ -3,7 +3,7 @@
 #ifndef _EN28J60_HW_H_
 #define _EN28J60_HW_H_
 
-#include <p33Fxxxx.h>
+#include <xc.h>
 
 //custom pin assignments for our hardware
 // ENC28J60 I/O pins

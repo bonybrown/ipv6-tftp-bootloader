@@ -1,6 +1,6 @@
 #include "i2c.h"
 
-#include <p33Fxxxx.h>
+#include <xc.h>
 #include <stdio.h>
 #include <stdbool.h>
 

@@ -1,6 +1,6 @@
 #include "mc24aa00.h"
 #include "i2c.h"
-#include <p33Fxxxx.h>
+#include <xc.h>
 
 #define MAC_ADDRESS_SUB_ADDRESS 0xFA
 

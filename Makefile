@@ -61,7 +61,7 @@ ifneq ($(FOUND_DOCKER_IMAGE),)
  REL_DIR := $(shell realpath --relative-to=$(TOP_DIR) $(THIS_DIR) )
 
 use_docker:
-	docker run -u $(UID) -v $(TOP_DIR):/data:rw --workdir /data/$(REL_DIR) --env GIT_TAG=$(GIT_TAG) $(DOCKER_IMAGE_NAME) make $(MFLAGS) $(MAKECMDGOALS)
+	docker run --rm -u $(UID) -v $(TOP_DIR):/data:rw --workdir /data/$(REL_DIR) --env GIT_TAG=$(GIT_TAG) $(DOCKER_IMAGE_NAME) make $(MFLAGS) $(MAKECMDGOALS)
 
 
 else

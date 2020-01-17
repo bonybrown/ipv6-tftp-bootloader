@@ -4,7 +4,7 @@ This project implements an IPV6 (UDP only) stack and Trivial FTP (tftp) server f
 
 It currently supports platforms using a Microchip PIC33 CPU with SPI attached ENC28J60 network controller chip.
 
-##The booloader:
+## The booloader:
 
 * Detects and counts the holding of the reset button, beeping once per second (piezo attached to PWM output)
 * Initialises a Microchip PIC33 microcontroller and SPI attached ENC28J60 ethernet controller
@@ -15,7 +15,7 @@ It currently supports platforms using a Microchip PIC33 CPU with SPI attached EN
 * Writes the contents of the sent file to the program EEPROM of the microcontroller (without overwriting the bootloader code)
 
 
-##Normal operation sequence:
+## Normal operation sequence:
 
 * Bootloader executes on reset
 * Detects if reset button is held
@@ -44,7 +44,9 @@ Otherwise, install the Microchip XC16 compiler.
 
 ### Building the project
 
-`make` will build the project
+`make` will build the project.
+
+If you have made the docker image, the build will execute in the docker container. Otherwise, the build runs in the local environment.
 
 ### Other make targets
 

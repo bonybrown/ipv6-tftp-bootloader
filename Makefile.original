@@ -10,7 +10,7 @@ PROJECT_SOURCE=  target/main.c target/serial.c target/net.c target/i2c.c target/
 CPU := 33FJ128GP804
 LINKER_SCRIPT := target/$(CPU).gld
 
-XC16_PATH = /opt/microchip/xc16/v1.26/bin/
+XC16_PATH = /opt/microchip/xc16/v1.41/bin/
 
 CC       = $(XC16_PATH)xc16-gcc
 LD       = $(XC16_PATH)xc16-gcc
